@@ -19,7 +19,7 @@
       <form id="feedback-form">
         <div class="form-group">
           <label for="feedback-text">Your Feedback</label>
-          <textarea id="feedback-text" rows="4" placeholder="Tell us about your experience..." required></textarea>
+          <textarea id="feedback-text" rows="4" maxlength="5000" placeholder="Tell us about your experience..." required></textarea>
         </div>
         <div class="form-group">
           <label for="feedback-rating">Rating</label>
@@ -33,7 +33,7 @@
           </select>
         </div>
         <button type="submit" id="feedback-submit">Submit Feedback</button>
-        <div id="form-status" class="form-status"></div>
+        <div id="form-status" class="form-status" role="status"></div>
       </form>
     </section>
 
@@ -41,15 +41,16 @@
       <h2>Analytics Overview</h2>
       <div id="stats-container">
         <div class="stat">
-          <span class="stat-value" id="total-feedback">0</span>
+          <span class="stat-value" id="total-feedback">—</span>
           <span class="stat-label">Total Feedback</span>
         </div>
         <div class="stat">
-          <span class="stat-value" id="average-rating">0.00</span>
+          <span class="stat-value" id="average-rating">—</span>
           <span class="stat-label">Average Rating</span>
         </div>
       </div>
 
+      <p id="analytics-status" role="status"></p>
       <div class="charts-row">
         <div class="chart-wrapper">
           <canvas id="rating-chart"></canvas>
@@ -70,3 +71,4 @@
   <script src="app.js"></script>
 </body>
 </html>
+

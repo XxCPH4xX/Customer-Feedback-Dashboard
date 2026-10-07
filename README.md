@@ -1,84 +1,38 @@
 # Customer Feedback Dashboard
 
-An AI-powered customer feedback dashboard with sentiment analysis, real-time analytics, and interactive charts.
+A small Express app for collecting feedback and showing ratings and sentiment charts. Sentiment comes from keyword matching; it does not call an AI service.
 
-## Features
+## Run locally
 
-- **Feedback Submission** - Submit customer feedback with ratings (1-5)
-- **Sentiment Analysis** - Automatic sentiment detection (positive/neutral/negative)
-- **Analytics Dashboard** - Real-time statistics and charts
-- **Rating Distribution** - Bar chart showing feedback ratings
-- **Sentiment Distribution** - Doughnut chart showing sentiment breakdown
+You need Node.js 22 and a PostgreSQL database.
 
-## Tech Stack
-
-**Backend:**
-- Node.js + Express
-- SQLite3 database
-- CORS middleware
-
-**Frontend:**
-- HTML5, CSS3, JavaScript
-- Chart.js v4 for data visualization
-
-## Project Structure
-
-```
-Customer Feedback Dashboard/
-├── client/
-│   ├── index.html          # Dashboard UI
-│   ├── style.css           # Styles
-│   ├── app.js              # Frontend logic
-│   └── script.js           # Additional scripts
-├── server/
-│   ├── server.js           # Express server
-│   ├── db.js               # Database setup
-│   ├── sentiment.js        # Sentiment analysis
-│   ├── package.json        # Dependencies
-│   └── routes/
-│       ├── feedback.js     # Feedback API routes
-│       └── analytics.js    # Analytics API routes
-├── PROJECT_BLUEPRINT.md    # Project specification
-└── README.md
-```
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v14 or higher)
-- npm
-
-### Installation
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd "Customer Feedback Dashboard"
-
-# Install server dependencies
+```sh
 cd server
-npm install
-```
-
-### Running the App
-
-```bash
-# From the server directory
+npm ci
+cp .env.example .env
+# Set DATABASE_URL in .env to your PostgreSQL connection string.
 npm start
 ```
 
-The app will be available at `http://localhost:3000`
+Open http://localhost:3000. The app creates its feedback table on the first API request. Database credentials stay on the server.
 
-## API Endpoints
+## Deploy on Vercel
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/feedback` | Submit new feedback |
-| GET | `/api/feedback` | Get all feedback |
-| GET | `/api/analytics` | Get analytics data |
-| GET | `/api/health` | Health check |
+1. Import this repository and set **Root Directory** to `server` and **Framework Preset** to `Express`. Leave build and output directory overrides off.
+2. Connect a PostgreSQL database, such as Neon, to the project. Set `DATABASE_URL` (or `POSTGRES_URL`) for Production using the provider's pooled connection string and SSL settings. Use a separate database for previews.
+3. Deploy. If you add or change an environment variable afterward, redeploy so the function receives it.
+4. Check `/api/health`; it returns `{"status":"ok"}` only when the database is reachable and the schema is ready.
 
-## License
+Vercel serves `server/public` as static files. The frontend uses `/api`, so the same files work locally and on the deployed domain. Pushes to the connected production branch trigger a new deployment.
 
-MIT
+The old version wrote to `server/feedback.db`. Vercel cannot keep that SQLite file between function instances. This version uses PostgreSQL; it does not import existing SQLite records automatically. Keep a backup of any old database if you have feedback to migrate.
+
+## Tests
+
+```sh
+cd server
+npm test
+TEST_DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/feedback_test npm test
+```
+
+The first command checks startup and failure handling without a database. The second also checks submission, validation, analytics and persistence against PostgreSQL. Use a dedicated test database: the integration test clears its feedback table.

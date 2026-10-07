@@ -1,50 +1,39 @@
 const express = require('express');
 const router = express.Router();
-const { getDb } = require('../db');
+const { query } = require('../db');
 const { analyzeSentiment } = require('../sentiment');
 
-router.get('/', (req, res) => {
-  const db = getDb();
-  db.all('SELECT * FROM feedback ORDER BY created_at DESC', [], (err, rows) => {
-    if (err) {
-      console.error('Error fetching feedback:', err.message);
-      return res.status(500).json({ error: 'Failed to retrieve feedback' });
-    }
+router.get('/', async (req, res, next) => {
+  try {
+    const { rows } = await query('SELECT * FROM feedback ORDER BY created_at DESC, id DESC');
     res.json(rows);
-  });
+  } catch (error) {
+    next(error);
+  }
 });
 
-router.post('/', (req, res) => {
-  const { text, rating } = req.body;
-
-  if (!text || typeof text !== 'string' || text.trim().length === 0) {
+router.post('/', async (req, res, next) => {
+  const { text, rating } = req.body || {};
+  if (typeof text !== 'string' || !text.trim()) {
     return res.status(400).json({ error: 'Text is required and must be a non-empty string' });
   }
-
+  if (text.trim().length > 5000) {
+    return res.status(400).json({ error: 'Feedback must be 5000 characters or fewer' });
+  }
   const ratingNum = Number(rating);
-  if (!Number.isInteger(ratingNum) || ratingNum < 1 || ratingNum > 5) {
+  if (!['number', 'string'].includes(typeof rating) || !Number.isInteger(ratingNum) || ratingNum < 1 || ratingNum > 5) {
     return res.status(400).json({ error: 'Rating must be an integer between 1 and 5' });
   }
-
-  const analysis = analyzeSentiment(text.trim());
-  const sentiment = analysis.sentiment.toLowerCase();
-  const db = getDb();
-
-  const sql = 'INSERT INTO feedback (text, rating, sentiment) VALUES (?, ?, ?)';
-  db.run(sql, [text.trim(), ratingNum, sentiment], function (err) {
-    if (err) {
-      console.error('Error inserting feedback:', err.message);
-      return res.status(500).json({ error: 'Failed to save feedback' });
-    }
-
-    db.get('SELECT * FROM feedback WHERE id = ?', [this.lastID], (err, row) => {
-      if (err) {
-        console.error('Error retrieving inserted feedback:', err.message);
-        return res.status(500).json({ error: 'Feedback saved but failed to retrieve' });
-      }
-      res.status(201).json(row);
-    });
-  });
+  try {
+    const sentiment = analyzeSentiment(text.trim()).sentiment.toLowerCase();
+    const { rows } = await query(
+      'INSERT INTO feedback (text, rating, sentiment) VALUES ($1, $2, $3) RETURNING *',
+      [text.trim(), ratingNum, sentiment]
+    );
+    res.status(201).json(rows[0]);
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = router;

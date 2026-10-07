@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = '/api';
 
 let ratingChart = null;
 let sentimentChart = null;
@@ -12,6 +12,7 @@ const formStatus = document.getElementById('form-status');
 const feedbackList = document.getElementById('feedback-list');
 const totalFeedback = document.getElementById('total-feedback');
 const averageRating = document.getElementById('average-rating');
+const analyticsStatus = document.getElementById('analytics-status');
 
 // --- Fetch helpers ---
 async function apiGet(path) {
@@ -109,12 +110,19 @@ async function loadAnalytics() {
     totalFeedback.textContent = data.totalFeedback;
     averageRating.textContent = data.averageRating.toFixed(2);
 
-    updateRatingChart(data.ratingDistribution);
-    updateSentimentChart(data.sentimentDistribution);
+    analyticsStatus.textContent = typeof Chart === 'undefined' ? 'Charts could not load. Your totals are still available.' : '';
+    if (typeof Chart !== 'undefined') {
+      updateRatingChart(data.ratingDistribution);
+      updateSentimentChart(data.sentimentDistribution);
+    }
   } catch {
-    // Analytics endpoint may not exist yet; show defaults
-    totalFeedback.textContent = '0';
-    averageRating.textContent = '0.00';
+    totalFeedback.textContent = '—';
+    averageRating.textContent = '—';
+    analyticsStatus.textContent = 'Could not load analytics. Retrying shortly.';
+    ratingChart?.destroy();
+    sentimentChart?.destroy();
+    ratingChart = null;
+    sentimentChart = null;
   }
 }
 
@@ -202,3 +210,4 @@ setInterval(() => {
   loadFeedback();
   loadAnalytics();
 }, 5000);
+

@@ -1,48 +1,46 @@
 const express = require('express');
-const cors = require('cors');
 const path = require('path');
-const { initDb, closeDb } = require('./db');
+const { query, closeDb } = require('./db');
 const feedbackRoutes = require('./routes/feedback');
 const analyticsRoutes = require('./routes/analytics');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(__dirname, '..', 'client')));
-
+app.use(express.json({ limit: '32kb' }));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/analytics', analyticsRoutes);
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'client', 'index.html'));
-});
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
-
-async function start() {
+app.get('/api/health', async (req, res, next) => {
   try {
-    await initDb();
-    app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-    });
-  } catch (err) {
-    console.error('Failed to start server:', err.message);
-    process.exit(1);
+    await query('SELECT 1');
+    res.json({ status: 'ok' });
+  } catch (error) {
+    next(error);
+  }
+});
+app.use((error, req, res, next) => {
+  if (error.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Request body must be valid JSON' });
+  }
+  if (error.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Request body is too large' });
+  }
+  console.error('Database request failed:', error.code || 'UNKNOWN');
+  res.status(503).json({ error: 'Feedback storage is unavailable. Please try again later.' });
+});
+
+if (require.main === module) {
+  const port = process.env.PORT || 3000;
+  const server = app.listen(port, () => console.log(`Server running on http://localhost:${port}`));
+  for (const signal of ['SIGINT', 'SIGTERM']) {
+    process.once(signal, () => server.close(async () => {
+      await closeDb();
+      process.exit(0);
+    }));
   }
 }
 
-process.on('SIGINT', async () => {
-  await closeDb();
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  await closeDb();
-  process.exit(0);
-});
-
-start();
+module.exports = app;
