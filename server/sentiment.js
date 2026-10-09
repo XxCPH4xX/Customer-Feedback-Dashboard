@@ -1,8 +1,6 @@
-// Rule-based sentiment analysis engine
 const positiveWords = ['good', 'great', 'excellent', 'awesome', 'fantastic', 'love', 'like', 'happy', 'pleased', 'satisfied', 'amazing', 'wonderful', 'best', 'better', 'perfect', 'positive', 'recommend'];
 const negativeWords = ['bad', 'terrible', 'awful', 'hate', 'dislike', 'unhappy', 'disappointed', 'poor', 'worst', 'worse', 'negative', 'angry', 'frustrated', 'annoyed', 'issue', 'problem', 'bug'];
 
-// Tag extraction keywords
 const tagKeywords = {
   UI: ['ui', 'interface', 'design', 'layout', 'button', 'menu', 'screen'],
   Performance: ['performance', 'speed', 'slow', 'fast', 'lag', 'loading', 'responsive'],
@@ -13,9 +11,10 @@ const tagKeywords = {
 };
 
 /**
- * Analyze sentiment of text
- * @param {string} text - Feedback text to analyze
- * @returns {Object} { sentiment: string, confidence: number, tags: string[] }
+ * Classify text by keyword counts and extract topic tags.
+ * Confidence measures the keyword imbalance (0–100), not a model probability.
+ * @param {string} text
+ * @returns {{sentiment: string, confidence: number, tags: string[]}}
  */
 function analyzeSentiment(text) {
   if (!text || typeof text !== 'string') {
@@ -26,7 +25,6 @@ function analyzeSentiment(text) {
   let positiveCount = 0;
   let negativeCount = 0;
 
-  // Count positive and negative words
   positiveWords.forEach(word => {
     const matches = lowerText.match(new RegExp(`\\b${word}\\b`, 'g'));
     positiveCount += matches ? matches.length : 0;
@@ -37,7 +35,6 @@ function analyzeSentiment(text) {
     negativeCount += matches ? matches.length : 0;
   });
 
-  // Determine sentiment
   let sentiment;
   if (positiveCount > negativeCount) {
     sentiment = 'Positive';
@@ -47,16 +44,13 @@ function analyzeSentiment(text) {
     sentiment = 'Neutral';
   }
 
-  // Calculate confidence (0-100)
   const total = positiveCount + negativeCount;
   let confidence = 0;
   if (total > 0) {
     confidence = Math.abs(positiveCount - negativeCount) / total * 100;
   }
-  // Ensure confidence is between 0 and 100
   confidence = Math.max(0, Math.min(100, confidence));
 
-  // Extract tags
   const tags = [];
   Object.entries(tagKeywords).forEach(([tag, keywords]) => {
     const found = keywords.some(keyword => lowerText.includes(keyword));
@@ -67,7 +61,7 @@ function analyzeSentiment(text) {
 
   return {
     sentiment,
-    confidence: Math.round(confidence * 10) / 10, // Round to 1 decimal place
+    confidence: Math.round(confidence * 10) / 10,
     tags
   };
 }

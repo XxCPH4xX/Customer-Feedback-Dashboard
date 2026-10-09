@@ -1,6 +1,6 @@
 # Customer Feedback Dashboard
 
-A small Express app for collecting feedback and showing ratings and sentiment charts. Sentiment comes from keyword matching; it does not call an AI service.
+An Express app for collecting feedback and ratings, storing them in PostgreSQL, and displaying charts with Chart.js. Sentiment classification uses keyword matching.
 
 ## Run locally
 
@@ -25,7 +25,9 @@ Open http://localhost:3000. The app creates its feedback table on the first API 
 
 Vercel serves `server/public` as static files. The frontend uses `/api`, so the same files work locally and on the deployed domain. Pushes to the connected production branch trigger a new deployment.
 
-The old version wrote to `server/feedback.db`. Vercel cannot keep that SQLite file between function instances. This version uses PostgreSQL; it does not import existing SQLite records automatically. Keep a backup of any old database if you have feedback to migrate.
+### SQLite migration
+
+Existing records in `server/feedback.db` need a separate import into PostgreSQL. Back up the SQLite file before migrating. Vercel functions cannot retain a local SQLite database between instances.
 
 ## Tests
 

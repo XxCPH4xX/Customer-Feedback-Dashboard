@@ -3,7 +3,6 @@ const API_BASE = '/api';
 let ratingChart = null;
 let sentimentChart = null;
 
-// --- DOM refs ---
 const form = document.getElementById('feedback-form');
 const textarea = document.getElementById('feedback-text');
 const ratingSelect = document.getElementById('feedback-rating');
@@ -14,7 +13,6 @@ const totalFeedback = document.getElementById('total-feedback');
 const averageRating = document.getElementById('average-rating');
 const analyticsStatus = document.getElementById('analytics-status');
 
-// --- Fetch helpers ---
 async function apiGet(path) {
   const res = await fetch(`${API_BASE}${path}`);
   if (!res.ok) throw new Error(`GET ${path} failed (${res.status})`);
@@ -32,7 +30,6 @@ async function apiPost(path, body) {
   return data;
 }
 
-// --- Form submission ---
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   formStatus.textContent = '';
@@ -63,7 +60,6 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-// --- Render feedback list ---
 function renderFeedbackList(items) {
   if (!items.length) {
     feedbackList.innerHTML = '<div class="empty-state">No feedback yet. Be the first!</div>';
@@ -92,7 +88,6 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// --- Load feedback ---
 async function loadFeedback() {
   try {
     const items = await apiGet('/feedback');
@@ -102,7 +97,6 @@ async function loadFeedback() {
   }
 }
 
-// --- Load analytics & render stats + charts ---
 async function loadAnalytics() {
   try {
     const data = await apiGet('/analytics');
@@ -126,7 +120,6 @@ async function loadAnalytics() {
   }
 }
 
-// --- Rating bar chart ---
 function updateRatingChart(dist) {
   const labels = ['1', '2', '3', '4', '5'];
   const values = labels.map((k) => dist[k] || 0);
@@ -143,7 +136,7 @@ function updateRatingChart(dist) {
     data: {
       labels,
       datasets: [{
-        label: 'Number of Feedback',
+        label: 'Feedback count',
         data: values,
         backgroundColor: 'rgba(54, 162, 235, 0.5)',
         borderColor: 'rgba(54, 162, 235, 1)',
@@ -171,7 +164,6 @@ function updateRatingChart(dist) {
   });
 }
 
-// --- Sentiment doughnut chart ---
 function updateSentimentChart(dist) {
   const values = [dist.positive || 0, dist.neutral || 0, dist.negative || 0];
 
@@ -203,7 +195,6 @@ function updateSentimentChart(dist) {
   });
 }
 
-// --- Initial load + polling ---
 loadFeedback();
 loadAnalytics();
 setInterval(() => {

@@ -20,7 +20,7 @@ function post(url, body) {
   });
 }
 
-test('static pages load without storage; API failures are explicit and recoverable', async (t) => {
+test('serves static files and returns 503 when storage is unavailable', async (t) => {
   delete process.env.DATABASE_URL;
   delete process.env.POSTGRES_URL;
   const url = await serve(t);
